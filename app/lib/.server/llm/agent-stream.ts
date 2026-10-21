@@ -271,6 +271,11 @@ export function withAgentStreamDeadlines(model: LanguageModel, limits = DEFAULT_
     doStream: async (params: Parameters<typeof normalized.doStream>[0]) => {
       const startedAt = Date.now();
       const seenParts: Record<string, number> = {};
+      const attempt = new AbortController();
+      const signal = params.abortSignal
+        ? AbortSignal.any([params.abortSignal, attempt.signal])
+        : attempt.signal;
+
       const timeout = () => {
         const counts = Object.entries(seenParts)
           .map(([type, count]) => `${type}:${count}`)
