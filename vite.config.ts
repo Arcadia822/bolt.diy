@@ -185,6 +185,15 @@ export default defineConfig((config) => {
       'LMSTUDIO_API_BASE_URL',
       'TOGETHER_API_BASE_URL',
     ],
+    /*
+     * `vite preview` rejects requests whose Host header is not localhost
+     * (Vite's default allowedHosts). The production container is served
+     * behind the Tailscale HTTPS proxy, so its public hostname must be
+     * allowlisted here or every request returns 403.
+     */
+    preview: {
+      allowedHosts: ['host-c1.tail0fe215.ts.net'],
+    },
 
     /*
      * Test configuration lives in vitest.config.ts.
