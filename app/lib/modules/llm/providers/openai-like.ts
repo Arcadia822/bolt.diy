@@ -43,18 +43,19 @@ export default class OpenAILikeProvider extends BaseProvider {
       return [];
     }
 
-    /*
-     * 5s (the BaseProvider default) is too tight for a self-hosted gateway
-     * that fans out to upstream providers: the first `/models` call after a
-     * restart routinely exceeds it, and the failure silently degrades the
-     * list to the static env fallback.
-     */
-    const response = await fetch(`${baseUrl}/models`, {
-      headers: {
-        Authorization: `Bearer ${apiKey}`,
-      },
-      signal: this.createTimeoutSignal(15_000),
-    });
+    try {
+      /*
+       * 5s (the BaseProvider default) is too tight for a self-hosted gateway
+       * that fans out to upstream providers: the first `/models` call after a
+       * restart routinely exceeds it, and the failure silently degrades the
+       * list to the static env fallback.
+       */
+      const response = await fetch(`${baseUrl}/models`, {
+        headers: {
+          Authorization: `Bearer ${apiKey}`,
+        },
+        signal: this.createTimeoutSignal(15_000),
+      });
 
       if (!response.ok) {
         throw new Error(`HTTP ${response.status}: ${response.statusText}`);
