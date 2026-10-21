@@ -145,7 +145,9 @@ export function toSafeStreamErrorMessage(error: unknown): string {
    */
   logger.error(
     `Streaming provider error (${error instanceof Error ? error.name : 'UnknownError'}): ${providerMessage}`,
-    error instanceof Error ? { cause: error instanceof Error ? String(error.cause) : undefined } : undefined,
+    error instanceof Error
+      ? { cause: String(error.cause), stack: error.stack }
+      : undefined,
   );
 
   if ((error instanceof Error && error.name === 'TimeoutError') || /timeout|timed\s*out/.test(normalizedMessage)) {
