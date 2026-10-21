@@ -102,9 +102,15 @@ describe('LLMManager', () => {
     }
   });
 
-  it('defaults to OpenRouter regardless of registration order', () => {
+  it('defaults to the self-hosted gateway regardless of registration order', () => {
     const manager = LLMManager.getInstance({});
-    expect(manager.getDefaultProvider().name).toBe('OpenRouter');
+
+    /*
+     * This fork routes every model through Magpie's OpenAILike endpoint.
+     * Defaulting to OpenRouter picks a provider with no key configured here,
+     * so the first message fails instead of reaching the gateway.
+     */
+    expect(manager.getDefaultProvider().name).toBe('OpenAILike');
   });
 
   it('getProvider returns the registered provider', () => {
