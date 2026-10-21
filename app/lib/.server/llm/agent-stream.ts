@@ -20,6 +20,10 @@ export function withAgentToolCallRecovery(model: LanguageModel, onRetry: () => v
 
   return {
     ...normalized,
+    // Same reason as withAgentStreamDeadlines: the shim's `provider` is a
+    // prototype getter and a bare spread drops it.
+    provider: normalized.provider,
+    doGenerate: (...args: Parameters<typeof normalized.doGenerate>) => normalized.doGenerate(...args),
     doStream: async (params: Parameters<typeof normalized.doStream>[0]) => {
       const choice = params.toolChoice;
 
@@ -254,7 +258,16 @@ export function withAgentStreamDeadlines(model: LanguageModel, limits = DEFAULT_
   const normalized = wrapLanguageModel({ model, middleware: [] });
 
   return {
+    /*
+     * `wrapLanguageModel` with empty middleware returns the `asLanguageModelV4`
+     * shim, whose `provider`/`doGenerate` live on the prototype — a spread
+     * drops them, and the SDK's `model.provider.split(".")` then throws
+     * "Cannot read properties of undefined" on the very first agent-mode model
+     * call. Re-read the shim's fields explicitly instead of relying on spread.
+     */
     ...normalized,
+    provider: normalized.provider,
+    doGenerate: (...args: Parameters<typeof normalized.doGenerate>) => normalized.doGenerate(...args),
     doStream: async (params: Parameters<typeof normalized.doStream>[0]) => {
       const attempt = new AbortController();
       const signal = params.abortSignal ? AbortSignal.any([params.abortSignal, attempt.signal]) : attempt.signal;
