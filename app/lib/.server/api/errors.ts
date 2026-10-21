@@ -136,7 +136,17 @@ export function toSafeStreamErrorMessage(error: unknown): string {
   const statusCode =
     typeof error === 'object' && error !== null && 'statusCode' in error ? error.statusCode : undefined;
 
-  logger.error(`Streaming provider error (${error instanceof Error ? error.name : 'UnknownError'})`);
+  /*
+   * Log the raw provider message server-side. The client-safe mapping below
+   * deliberately hides diagnostics, which made mid-stream failures
+   * ("network error", disconnects, credential 401s) impossible to tell apart
+   * from logs alone. Server logs may contain provider URLs/keys — they must
+   * stay out of client responses, not out of server logs.
+   */
+  logger.error(
+    `Streaming provider error (${error instanceof Error ? error.name : 'UnknownError'}): ${providerMessage}`,
+    error instanceof Error ? { cause: error instanceof Error ? String(error.cause) : undefined } : undefined,
+  );
 
   if ((error instanceof Error && error.name === 'TimeoutError') || /timeout|timed\s*out/.test(normalizedMessage)) {
     return 'Custom error: The AI provider stopped responding before the next step completed. Completed file changes and tool results are preserved. Retry to continue, or select a different model.';
