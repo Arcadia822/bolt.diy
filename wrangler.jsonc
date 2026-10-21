@@ -12,18 +12,20 @@
    * provider only reads `context.cloudflare.env`, i.e. Worker bindings —
    * neither `.env` nor the parent process environment reaches workerd, so the
    * defaults have to live here.
-   */
-  /*
-   * Only models verified against host-a1 are pinned: `group/*` routing groups
-   * and most `cloudwise/*` ids currently answer 400/403/429 (credits or
-   * allow-list). Adding a model here is a promise that it completes, so grow
-   * this list from the provider's own /v1/models only after a real call works.
-   * Format: "model:maxTokens;model:maxTokens".
+   *
+   * Default model is a routing group, not a single model: `group/auto-*` is
+   * host-a1's per-model failover chain, so a dead provider account rolls over
+   * instead of failing the chat. Note that `group/role-worker` is a *local*
+   * Magpie chain and does not exist on host-a1 — only `group/auto-*` do.
+   *
+   * The dynamic `/models` list supersedes this fallback when the gateway
+   * answers; keep it to verified ids so a slow or offline gateway still yields
+   * a working picker instead of an empty one. Format: "model:maxTokens;…".
    */
   "vars": {
     "OPENAI_LIKE_API_BASE_URL": "http://100.85.55.0:3425/v1",
     "OPENAI_LIKE_API_KEY": "magpie-local",
-    "OPENAI_LIKE_API_MODELS": "cloudwise/glm-5.3-flash:1000000;codex/gpt-6-luna:900000;codex/gpt-6.1-sol:900000;copilot/claude-sonnet-5.5:1000000"
+    "OPENAI_LIKE_API_MODELS": "group/auto-glm-5-3-flash:1000000;group/auto-gemini-3-8-flash:1000000;cloudwise/glm-5.3-flash:1000000;codex/gpt-6-luna:900000"
   },
   "upload_source_maps": true
 }
