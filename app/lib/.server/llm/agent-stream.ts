@@ -269,9 +269,19 @@ export function withAgentStreamDeadlines(model: LanguageModel, limits = DEFAULT_
     provider: normalized.provider,
     doGenerate: (...args: Parameters<typeof normalized.doGenerate>) => normalized.doGenerate(...args),
     doStream: async (params: Parameters<typeof normalized.doStream>[0]) => {
-      const attempt = new AbortController();
-      const signal = params.abortSignal ? AbortSignal.any([params.abortSignal, attempt.signal]) : attempt.signal;
-      const timeout = () => attempt.abort(new DOMException('Agent model response timed out.', 'TimeoutError'));
+      const startedAt = Date.now();
+      const seenParts: Record<string, number> = {};
+      const timeout = () => {
+        const counts = Object.entries(seenParts)
+          .map(([type, count]) => `${type}:${count}`)
+          .join(',') || 'none';
+
+        logger.warn(
+          `Agent deadline fired after ${Date.now() - startedAt}ms; parts seen: ${counts}; firstMs=${limits.firstMs} idleMs=${limits.idleMs} attemptMs=${limits.attemptMs}`,
+        );
+
+        attempt.abort(new DOMException('Agent model response timed out.', 'TimeoutError'));
+      };
 
       let idleTimer = setTimeout(timeout, limits.firstMs);
 
@@ -318,6 +328,9 @@ export function withAgentStreamDeadlines(model: LanguageModel, limits = DEFAULT_
                 const { done, value } = await Promise.race([reader.read(), aborted]);
 
                 if (done) {
+                  logger.info(
+                    `Agent stream done after ${Date.now() - startedAt}ms; parts seen: ${JSON.stringify(seenParts)}`,
+                  );
                   finished = true;
                   release();
                   reader.releaseLock();
@@ -325,6 +338,9 @@ export function withAgentStreamDeadlines(model: LanguageModel, limits = DEFAULT_
 
                   return;
                 }
+
+                seenParts[value.type] = (seenParts[value.type] || 0) + 1;
+
 
                 // A completed attempt must not be replayed because its transport fails afterward.
                 if (value.type === 'finish') {
