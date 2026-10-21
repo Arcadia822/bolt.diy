@@ -5,7 +5,13 @@ import type { IProviderSetting } from '~/types/model';
 import { logger } from '~/utils/logger';
 
 interface OpenAIModelsResponse {
-  data: Array<{ id: string }>;
+  /*
+   * `max_input_tokens` / `context_length` are not part of the OpenAI wire
+   * format. Magpie adds them, and without them every model would be pinned to
+   * the 8000-token default, which truncates long conversations for models that
+   * advertise a 1M window. Other endpoints simply omit the fields.
+   */
+  data: Array<{ id: string; context_length?: number; max_input_tokens?: number }>;
 }
 
 export default class OpenAILikeProvider extends BaseProvider {
@@ -55,7 +61,7 @@ export default class OpenAILikeProvider extends BaseProvider {
         name: model.id,
         label: model.id,
         provider: this.name,
-        maxTokenAllowed: 8000,
+        maxTokenAllowed: model.max_input_tokens ?? model.context_length ?? 8000,
       }));
     } catch (error) {
       logger.info(`${this.name}: Could not fetch /models endpoint, checking fallback env`, error);
