@@ -611,7 +611,7 @@ async function chatAction({ context, request }: ActionFunctionArgs) {
       keepAliveMs: 15_000,
     });
   } catch (error: unknown) {
-    logger.error('Chat route error');
+    logger.error('Chat route error', error instanceof Error ? error.message : error);
 
     /*
      * Same credential check as before, but as a typed error so the status,
