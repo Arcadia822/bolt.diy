@@ -143,11 +143,10 @@ export function toSafeStreamErrorMessage(error: unknown): string {
    * from logs alone. Server logs may contain provider URLs/keys — they must
    * stay out of client responses, not out of server logs.
    */
+  const stack = error instanceof Error ? error.stack?.split('\n').slice(0, 6).join(' | ') : undefined;
+
   logger.error(
-    `Streaming provider error (${error instanceof Error ? error.name : 'UnknownError'}): ${providerMessage}`,
-    error instanceof Error
-      ? { cause: String(error.cause), stack: error.stack }
-      : undefined,
+    `Streaming provider error (${error instanceof Error ? error.name : 'UnknownError'}): ${providerMessage}${stack ? ` | ${stack}` : ''}`,
   );
 
   if ((error instanceof Error && error.name === 'TimeoutError') || /timeout|timed\s*out/.test(normalizedMessage)) {
