@@ -266,14 +266,21 @@ export class LLMManager {
 
   getDefaultProvider(): BaseProvider {
     /*
-     * Prefer OpenRouter explicitly. Registration order follows the export
-     * order of ./registry, which would otherwise make the default depend on
-     * which provider happens to be listed first.
+     * Prefer the self-hosted gateway. This fork routes every model through
+     * Magpie's OpenAILike endpoint, so defaulting to OpenRouter would select a
+     * provider whose key is not configured here — the first message would fail
+     * with "Missing API key for OpenRouter" instead of reaching the gateway.
+     * Registration order follows the export order of ./registry, so the order
+     * of `_providers` is not a safe default either.
      */
-    const openRouter = this._providers.get('OpenRouter');
+    const preferred = ['OpenAILike', 'OpenRouter'];
 
-    if (openRouter) {
-      return openRouter;
+    for (const name of preferred) {
+      const provider = this._providers.get(name);
+
+      if (provider) {
+        return provider;
+      }
     }
 
     const firstProvider = this._providers.values().next().value;

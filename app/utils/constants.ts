@@ -6,7 +6,17 @@ export const WORK_DIR = `/home/${WORK_DIR_NAME}`;
 export const MODIFICATIONS_TAG_NAME = 'bolt_file_modifications';
 export const MODEL_REGEX = /^\[Model: (.*?)\]\n\n/;
 export const PROVIDER_REGEX = /\[Provider: (.*?)\]\n\n/;
-export const DEFAULT_MODEL = 'claude-3-5-sonnet-latest';
+/*
+ * Fork default: this deployment talks to Magpie (host-a1) through the
+ * OpenAILike provider, so a Claude id no provider here serves would leave the
+ * picker pointing at a model that 404s on the first message.
+ *
+ * `group/auto-glm-5-3-flash` is the routing group for GLM-5.3-Flash rather
+ * than the bare `cloudwise/glm-5.3-flash` id: the group fails over across
+ * every provider account that serves the model, while the bare id pins one
+ * account and dies with it.
+ */
+export const DEFAULT_MODEL = 'group/auto-glm-5-3-flash';
 export const PROMPT_COOKIE_KEY = 'cachedPrompt';
 export const TOOL_EXECUTION_APPROVAL = {
   APPROVE: 'Yes, approved.',
